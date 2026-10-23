@@ -74,6 +74,20 @@ foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $m) { $dbModules[$m['module_key']]
 
 <div style="background: #fff; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.02);">
     <h2 style="margin-bottom: 25px;">🧩 Modul Styring</h2>
+
+    <?php if (isset($_GET['error'])): ?>
+        <?php $err = $_GET['error'] === 'protected'
+            ? 'Systemmoduler (Kerne-system, System og Brugerstyring) kan ikke deaktiveres eller slettes, fordi resten af systemet bruger dem.'
+            : $_GET['error']; ?>
+        <div style="background: #f8d7da; color: #721c24; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px;">
+            ⚠️ <?= htmlspecialchars($err) ?>
+        </div>
+    <?php elseif (isset($_GET['success'])): ?>
+        <div style="background: #d4edda; color: #155724; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px;">
+            ✅ Handling udført.
+        </div>
+    <?php endif; ?>
+
     <table style="width: 100%; border-collapse: separate; border-spacing: 0 10px;">
         <thead>
             <tr style="text-align: left; color: #718096; text-transform: uppercase; font-size: 12px;">
@@ -88,6 +102,7 @@ foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $m) { $dbModules[$m['module_key']]
                 $db = $dbModules[$key] ?? null;
                 $isInstalled = ($db && $db['is_installed'] == 1);
                 $isActive = ($db && $db['is_active'] == 1);
+                $isProtected = in_array($key, $protected_modules, true);
             ?>
             <tr style="background: #fcfcfc;">
                 <td style="padding: 20px; text-align: center;">
@@ -99,6 +114,9 @@ foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $m) { $dbModules[$m['module_key']]
                     <div style="display: flex; gap: 10px; align-items: center; min-width: 240px;">
                         <?php if (!$isInstalled): ?>
                             <a class="btn" style="min-width: 100px; text-align: center;" href="?side=admin&page=modules&action=install&module=<?= $key ?>">Installér</a>
+                        <?php elseif ($isProtected): ?>
+                            <span class="btn" style="min-width: 100px; text-align: center; background: #cbd5e0; color: #718096; cursor: not-allowed; pointer-events: none;">Deaktivér</span>
+                            <span style="color: #718096; font-size: 0.85em;">Systemmodul – kan ikke deaktiveres</span>
                         <?php else: ?>
                             <a class="btn" style="min-width: 100px; text-align: center;" href="?side=admin&page=modules&action=<?= $isActive ? 'deactivate' : 'activate' ?>&module=<?= $key ?>">
                                 <?= $isActive ? 'Deaktivér' : 'Aktivér' ?>
