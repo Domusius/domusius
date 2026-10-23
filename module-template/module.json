@@ -1,0 +1,10 @@
+{
+    "key": "eksempel",
+    "name": "Eksempel-modul",
+    "description": "Kort beskrivelse af hvad modulet gør.",
+    "version": "0.01",
+    "db": true,
+    "menu_title": "Eksempel",
+    "admin_menu_title": "Eksempel Opsætning",
+    "requires": []
+}

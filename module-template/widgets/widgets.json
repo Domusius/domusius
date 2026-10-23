@@ -1,0 +1,9 @@
+{
+    "widgets": [
+        {
+            "name": "Eksempel",
+            "file": "dashboard_view.php",
+            "size": "medium"
+        }
+    ]
+}

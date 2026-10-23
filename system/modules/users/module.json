@@ -1,0 +1,10 @@
+{
+  "key": "users",
+  "name": "Brugerstyring",
+  "description": "Administration af brugere, roller og godkendelse",
+  "version": "0.00",
+  "db": true,
+  "admin_page": false,
+  "protected": true,
+  "requires": {}
+}

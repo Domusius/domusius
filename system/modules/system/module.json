@@ -1,0 +1,10 @@
+{
+  "key": "system",
+  "name": "System",
+  "description": "Database, moduler og systemvedligeholdelse",
+  "version": "0.00",
+  "db": true,
+  "admin_page": false,
+  "protected": true,
+  "requires": {}
+}
