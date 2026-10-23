@@ -1,0 +1,25 @@
+# Hemmeligheder og lokale filer - maa aldrig i Git
+config/config.php
+install/install.lock
+*.lock
+.env
+
+# Midlertidigt
+temp/
+*.log
+
+# Cookies/tokens fra moduler
+**/*cookie*.txt
+*.cookie
+
+# Backups og lokale kopier
+*_20[0-9][0-9]-[0-9][0-9]-*.php
+*.bak
+*.zip
+*.sql.gz
+.DS_Store
+Thumbs.db
+
+# Database-dumps (undtagen installationsskemaet)
+*.sql
+!install/DB/setup_db.sql
