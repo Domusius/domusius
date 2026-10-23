@@ -21,13 +21,18 @@ admin og moduler. Alt andet er moduler, som du selv kan lave.*
 ## Install
 
 1. Copy the files to your web server's document root (or a sub-folder).
-2. Create an **empty** database, and a database user that only has access to that database.
-3. Open `/install/install.php` in your browser and fill in the database details, the name of
-   your system and an admin account (password at least 8 characters).
-4. Log in, then go to **Admin → Moduler** to install and activate modules.
+2. Have the login details for a MySQL/MariaDB user that is allowed to create databases and tables.
+   You do **not** have to create the database or any tables yourself – the installer does it.
+3. Open the address of the site in your browser (just the root folder, no special page). Until the
+   installation is finished you are sent to the installer automatically.
+4. Fill in the database host, user and password, a name for the database (it is created if it does not
+   exist), the name of your system, and an admin account (password at least 8 characters).
+5. When the installer is done, the same address shows the login page. Log in, then go to
+   **Admin → Moduler** to install and activate modules.
 
-The installer writes `config/config.php` and `install/install.lock`. Neither file must ever be
-committed to Git (both are in `.gitignore`). A template is in `config/config.example.php`.
+The installer writes `config/config.php` and `install/install.lock`. The lock file is what stops the
+installer from running again. Neither file must ever be committed to Git (both are in `.gitignore`).
+A template is in `config/config.example.php`. To run the installer again, delete both files first.
 
 ## Modules
 
@@ -42,7 +47,7 @@ Modules run with the full privileges of PHP on your server. **Only install modul
 ## Security notes
 
 - Keep secrets (API keys, passwords) in the database or in `config/config.php`, never in module files.
-- Remove or protect the `install/` folder after installation.
+- The installer is locked by `install/install.lock` once it has run, but you can also delete the `install/` folder afterwards.
 - Report security problems privately to the maintainer rather than in a public issue.
 
 ## License
