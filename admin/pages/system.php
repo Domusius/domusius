@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
     // Opdater den lokale variabel så den slår igennem med det samme
     $site_name = $siteName;
 }
- 
+
 // Hent nuværende navn
 $stmt = $pdo->query("SELECT setting_value FROM site_settings WHERE setting_key = 'site_name'");
 $currentName = $stmt->fetchColumn() ?: 'Domusius';
