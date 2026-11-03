@@ -4,21 +4,31 @@ if (!isset($user) || $user['role'] !== 'admin') {
     exit('Adgang nægtet');
 }
 
+require_once __DIR__ . '/../../inc/csrf.php';
+$csrf = csrf_token();
+
 $success = '';
+$error = '';
 
 // Håndtering af indstillinger
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
-    $siteName = trim($_POST['site_name'] ?? 'Domusius');
-    $stmt = $pdo->prepare("INSERT INTO site_settings (setting_key, setting_value) VALUES ('site_name', :val) ON DUPLICATE KEY UPDATE setting_value = :val");
-    $stmt->execute([':val' => $siteName]);
-    
-    if (function_exists('log_admin_action')) {
-        log_admin_action($pdo, 'SETTINGS_UPDATE', "Ændrede sitenavn til: $siteName");
+
+    // Sikkerhedstoken: uden et gyldigt token gemmes der ingenting.
+    if (!csrf_check($_POST['csrf'] ?? '')) {
+        $error = 'Handlingen blev afvist, fordi sikkerhedstokenet manglede eller var forkert. Prøv igen fra denne side.';
+    } else {
+        $siteName = trim($_POST['site_name'] ?? 'Domusius');
+        $stmt = $pdo->prepare("INSERT INTO site_settings (setting_key, setting_value) VALUES ('site_name', :val) ON DUPLICATE KEY UPDATE setting_value = :val");
+        $stmt->execute([':val' => $siteName]);
+
+        if (function_exists('log_admin_action')) {
+            log_admin_action($pdo, 'SETTINGS_UPDATE', "Ændrede sitenavn til: $siteName");
+        }
+        $success = "Systemindstillinger er gemt!";
+
+        // Opdater den lokale variabel så den slår igennem med det samme
+        $site_name = $siteName;
     }
-    $success = "Systemindstillinger er gemt!";
-    
-    // Opdater den lokale variabel så den slår igennem med det samme
-    $site_name = $siteName;
 }
 
 // Hent nuværende navn
@@ -27,12 +37,16 @@ $currentName = $stmt->fetchColumn() ?: 'Domusius';
 ?>
 
 <div class="admin-header">
-    <h1>⚙️ Systemindstillinger</h1>
+    <h1><i class="fas fa-cog"></i> Systemindstillinger</h1>
     <p>Her kan du styre de overordnede rammer for din platform.</p>
 </div>
 
+<?php if ($error): ?>
+    <div class="alert error" style="margin-bottom: 20px; background: #f8d7da; color: #721c24; padding: 12px 15px; border-radius: 8px;"><i class="fas fa-exclamation-triangle"></i> <?= htmlspecialchars($error) ?></div>
+<?php endif; ?>
+
 <?php if ($success): ?>
-    <div class="alert success" style="margin-bottom: 20px;">✅ <?= $success ?></div>
+    <div class="alert success" style="margin-bottom: 20px;"><i class="fas fa-check-circle"></i> <?= $success ?></div>
 <?php endif; ?>
 
 <div class="grid-container" style="display: grid; grid-template-columns: 1fr; gap: 25px;">
@@ -40,6 +54,7 @@ $currentName = $stmt->fetchColumn() ?: 'Domusius';
     <div class="content-card">
         <h3><i class="fas fa-globe"></i> Generelle indstillinger</h3>
         <form method="post">
+            <?= csrf_field() ?>
             <div class="form-group" style="margin-bottom: 20px;">
                 <label>Sidens Navn (Site Name):</label>
                 <input type="text" name="site_name" value="<?= htmlspecialchars($currentName) ?>" style="width: 100%; max-width: 400px; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
@@ -58,7 +73,7 @@ $currentName = $stmt->fetchColumn() ?: 'Domusius';
             <div style="padding: 20px; border: 1px solid #eee; border-radius: 8px;">
                 <h4 style="margin-top: 0;">Backup (Export)</h4>
                 <p style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">Download en komplet SQL-kopi af din database.</p>
-                <a href="admin/system/export_db.php" class="btn btn-primary" style="text-decoration: none; display: inline-block; width: 100%; text-align: center;">
+                <a href="admin/system/export_db.php?csrf=<?= $csrf ?>" class="btn btn-primary" style="text-decoration: none; display: inline-block; width: 100%; text-align: center;">
                     <i class="fas fa-download"></i> Download SQL
                 </a>
             </div>
@@ -66,6 +81,7 @@ $currentName = $stmt->fetchColumn() ?: 'Domusius';
             <div style="padding: 20px; border: 1px solid #eee; border-radius: 8px;">
                 <h4 style="margin-top: 0;">Gendan (Import)</h4>
                 <form action="admin/system/import_db.php" method="post" enctype="multipart/form-data">
+                    <?= csrf_field() ?>
                     <input type="file" name="db_file" style="margin-bottom: 15px; font-size: 0.8rem;">
                     <button type="submit" class="btn btn-reject" style="width: 100%;" onclick="return confirm('ADVARSEL: Dette overskriver din nuværende database! Er du helt sikker?')">
                         <i class="fas fa-upload"></i> Upload & Gendan
