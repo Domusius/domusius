@@ -6,36 +6,46 @@ if (!isset($user) || $user['role'] !== 'admin') {
     exit('Adgang nægtet');
 }
 
+require_once __DIR__ . '/../../inc/csrf.php';
+
+$error = '';
+
 /* -------------------------------------------------
    Gem Mail-indstillinger (Inkl. SMTP)
 ------------------------------------------------- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_mail_settings'])) {
-    $settings_to_save = [
-        'admin_notification_email' => $_POST['admin_notification_email'] ?? '',
-        'admin_mail_mode'          => $_POST['admin_mail_mode'] ?? 'single',
-        'mail_sender_name'         => $_POST['mail_sender_name'] ?? 'System Notifikation',
-        'mail_sender_email'        => $_POST['mail_sender_email'] ?? '',
-        // SMTP Indstillinger
-        'smtp_host'                => $_POST['smtp_host'] ?? 'smtp.gmail.com',
-        'smtp_port'                => $_POST['smtp_port'] ?? '465',
-        'smtp_user'                => $_POST['smtp_user'] ?? '',
-        'smtp_pass'                => $_POST['smtp_pass'] ?? '',
-        'smtp_encryption'          => $_POST['smtp_encryption'] ?? 'ssl'
-    ];
-    
-    foreach ($settings_to_save as $key => $val) {
-        $stmt = $pdo->prepare("INSERT INTO site_settings (setting_key, setting_value) VALUES (:k, :v) ON DUPLICATE KEY UPDATE setting_value = :v");
-        $stmt->execute([':k' => $key, ':v' => trim($val)]);
-    }
 
-    // LOG HANDLINGEN (Så du kan se det i din nye log-oversigt)
-    if (function_exists('log_admin_action')) {
-        log_admin_action($pdo, 'MAIL_SETTINGS_UPDATE', "Opdaterede SMTP og mail-indstillinger");
-    }
+    // Sikkerhedstoken: uden et gyldigt token gemmes der ingenting.
+    if (!csrf_check($_POST['csrf'] ?? '')) {
+        $error = 'Handlingen blev afvist, fordi sikkerhedstokenet manglede eller var forkert. Prøv igen fra denne side.';
+    } else {
+        $settings_to_save = [
+            'admin_notification_email' => $_POST['admin_notification_email'] ?? '',
+            'admin_mail_mode'          => $_POST['admin_mail_mode'] ?? 'single',
+            'mail_sender_name'         => $_POST['mail_sender_name'] ?? 'System Notifikation',
+            'mail_sender_email'        => $_POST['mail_sender_email'] ?? '',
+            // SMTP Indstillinger
+            'smtp_host'                => $_POST['smtp_host'] ?? 'smtp.gmail.com',
+            'smtp_port'                => $_POST['smtp_port'] ?? '465',
+            'smtp_user'                => $_POST['smtp_user'] ?? '',
+            'smtp_pass'                => $_POST['smtp_pass'] ?? '',
+            'smtp_encryption'          => $_POST['smtp_encryption'] ?? 'ssl'
+        ];
 
-    // RETTET HER: Vi sender brugeren tilbage til 'page=mail_system' i stedet for 'tab=...'
-    header("Location: index.php?side=admin&page=mail_system&success=1");
-    exit;
+        foreach ($settings_to_save as $key => $val) {
+            $stmt = $pdo->prepare("INSERT INTO site_settings (setting_key, setting_value) VALUES (:k, :v) ON DUPLICATE KEY UPDATE setting_value = :v");
+            $stmt->execute([':k' => $key, ':v' => trim($val)]);
+        }
+
+        // LOG HANDLINGEN (Så du kan se det i din nye log-oversigt)
+        if (function_exists('log_admin_action')) {
+            log_admin_action($pdo, 'MAIL_SETTINGS_UPDATE', "Opdaterede SMTP og mail-indstillinger");
+        }
+
+        // RETTET HER: Vi sender brugeren tilbage til 'page=mail_system' i stedet for 'tab=...'
+        header("Location: index.php?side=admin&page=mail_system&success=1");
+        exit;
+    }
 }
 
 /* -------------------------------------------------
@@ -53,13 +63,16 @@ $mailMode   = $s['admin_mail_mode'] ?? 'single';
 $encryption = $s['smtp_encryption'] ?? 'ssl';
 ?>
 
-<h1>📧 Mail System & SMTP</h1>
+<h1><i class="fas fa-envelope"></i> Mail System & SMTP</h1>
 
-<?php if (isset($_GET['success'])): ?>
-    <div style="background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-bottom: 20px;">✅ Mail-indstillinger gemt!</div>
+<?php if ($error): ?>
+    <div style="background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin-bottom: 20px;"><i class="fas fa-exclamation-triangle"></i> <?= htmlspecialchars($error) ?></div>
+<?php elseif (isset($_GET['success'])): ?>
+    <div style="background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-bottom: 20px;"><i class="fas fa-check-circle"></i> Mail-indstillinger gemt!</div>
 <?php endif; ?>
 
 <form method="post" action="?side=admin&page=mail_system">
+    <?= csrf_field() ?>
     <div class="content-card" style="margin-bottom: 20px; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
         <h3>1. Modtager Indstillinger</h3>
         <label>Hvem skal have besked om nye brugere?</label><br><br>
@@ -98,5 +111,5 @@ $encryption = $s['smtp_encryption'] ?? 'ssl';
         </div>
     </div>
 
-    <button type="submit" name="save_mail_settings" class="btn-primary" style="padding: 10px 20px; cursor: pointer;">💾 Gem SMTP Indstillinger</button>
+    <button type="submit" name="save_mail_settings" class="btn-primary" style="padding: 10px 20px; cursor: pointer;"><i class="fas fa-save"></i> Gem SMTP Indstillinger</button>
 </form>
