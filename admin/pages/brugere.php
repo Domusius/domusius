@@ -9,6 +9,9 @@ if (!isset($user) || $user['role'] !== 'admin') {
 // Inkluder nødvendige funktioner
 require_once __DIR__ . '/../../system/mail_functions.php';
 require_once __DIR__ . '/log_admin_action.php';
+require_once __DIR__ . '/../../inc/csrf.php';
+
+$csrf = csrf_token();
 
 // Hent sitets navn til brug i mails
 $stmtSettings = $pdo->query("SELECT setting_value FROM site_settings WHERE setting_key = 'site_name'");
@@ -18,6 +21,13 @@ $currentSiteName = $stmtSettings->fetchColumn() ?: 'Domusius';
     1. Håndtering af Bruger-handlinger
 ------------------------------------------------- */
 if (isset($_GET['action']) && isset($_GET['user_id'])) {
+
+    // Sikkerhedstoken: uden et gyldigt token sker der ingenting.
+    if (!csrf_check($_GET['csrf'] ?? '')) {
+        header("Location: index.php?side=admin&tab=brugere&error=csrf");
+        exit;
+    }
+
     $targetId = (int)$_GET['user_id'];
     $action = $_GET['action'];
 
@@ -87,6 +97,13 @@ if (isset($_GET['action']) && isset($_GET['user_id'])) {
     2. Gem Regler (Indstillinger)
 ------------------------------------------------- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_user_settings'])) {
+
+    // Sikkerhedstoken: uden et gyldigt token gemmes der ingenting.
+    if (!csrf_check($_POST['csrf'] ?? '')) {
+        header("Location: index.php?side=admin&tab=brugere&error=csrf");
+        exit;
+    }
+
     $keys = ['registration_open', 'require_user_approval'];
     foreach ($keys as $key) {
         $val = isset($_POST[$key]) ? '1' : '0';
@@ -109,17 +126,31 @@ $settings = $pdo->query("SELECT setting_key, setting_value FROM site_settings WH
 $users_list = $pdo->query("SELECT id, username, email, role, status FROM users ORDER BY id DESC")->fetchAll();
 ?>
 
-<h1>👤 Brugeradministration</h1>
+<h1><i class="fas fa-user"></i> Brugeradministration</h1>
 
-<?php if (isset($_GET['success'])): ?>
+<?php if (isset($_GET['error'])): ?>
+    <?php
+    if ($_GET['error'] === 'csrf') {
+        $err = 'Handlingen blev afvist, fordi sikkerhedstokenet manglede eller var forkert. Prøv igen fra denne side.';
+    } elseif ($_GET['error'] === 'self_action') {
+        $err = 'Du kan ikke ændre din egen konto her.';
+    } else {
+        $err = 'Der opstod en fejl.';
+    }
+    ?>
+    <div style="background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin-bottom: 20px;">
+        <i class="fas fa-exclamation-triangle"></i> <?= htmlspecialchars($err) ?>
+    </div>
+<?php elseif (isset($_GET['success'])): ?>
     <div style="background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-bottom: 20px;">
-        ✅ Handling udført! (Brugeren har modtaget mail hvis relevant)
+        <i class="fas fa-check-circle"></i> Handling udført! (Brugeren har modtaget mail hvis relevant)
     </div>
 <?php endif; ?>
 
 <div class="content-card" style="margin-bottom: 30px; border-left: 5px solid #007bff;">
     <h3>Regler for nye brugere</h3>
     <form method="post">
+        <?= csrf_field() ?>
         <label style="display: block; margin-bottom: 10px; cursor: pointer;">
             <input type="checkbox" name="registration_open" <?= ($settings['registration_open'] ?? '0') === '1' ? 'checked' : '' ?>>
             Tillad at nye brugere selv kan oprette en konto
@@ -128,7 +159,7 @@ $users_list = $pdo->query("SELECT id, username, email, role, status FROM users O
             <input type="checkbox" name="require_user_approval" <?= ($settings['require_user_approval'] ?? '1') === '1' ? 'checked' : '' ?>>
             Nye brugere skal godkendes før de kan logge ind
         </label>
-        <button type="submit" name="save_user_settings" class="btn btn-primary">💾 Gem regler</button>
+        <button type="submit" name="save_user_settings" class="btn btn-primary"><i class="fas fa-save"></i> Gem regler</button>
     </form>
 </div>
 
@@ -165,20 +196,20 @@ $users_list = $pdo->query("SELECT id, username, email, role, status FROM users O
                             <div class="action-buttons-inline">
                                 
                                 <?php if ($u['role'] === 'admin'): ?>
-                                    <a href="?side=admin&tab=brugere&action=make_user&user_id=<?= $u['id'] ?>" class="btn">Gør til bruger</a>
+                                    <a href="?side=admin&tab=brugere&action=make_user&user_id=<?= $u['id'] ?>&csrf=<?= $csrf ?>" class="btn">Gør til bruger</a>
                                 <?php else: ?>
-                                    <a href="?side=admin&tab=brugere&action=make_admin&user_id=<?= $u['id'] ?>" class="btn btn-admin">Gør til admin</a>
+                                    <a href="?side=admin&tab=brugere&action=make_admin&user_id=<?= $u['id'] ?>&csrf=<?= $csrf ?>" class="btn btn-admin">Gør til admin</a>
                                 <?php endif; ?>
 
                                 <?php if ($u['status'] === 'pending'): ?>
-                                    <a href="?side=admin&tab=brugere&action=approve&user_id=<?= $u['id'] ?>" class="btn btn-approve">Godkend</a>
+                                    <a href="?side=admin&tab=brugere&action=approve&user_id=<?= $u['id'] ?>&csrf=<?= $csrf ?>" class="btn btn-approve">Godkend</a>
                                 <?php elseif ($u['status'] === 'active'): ?>
-                                    <a href="?side=admin&tab=brugere&action=deactivate&user_id=<?= $u['id'] ?>" class="btn btn-disable">Deaktiver</a>
+                                    <a href="?side=admin&tab=brugere&action=deactivate&user_id=<?= $u['id'] ?>&csrf=<?= $csrf ?>" class="btn btn-disable">Deaktiver</a>
                                 <?php else: ?>
-                                    <a href="?side=admin&tab=brugere&action=activate&user_id=<?= $u['id'] ?>" class="btn btn-enable">Aktiver</a>
+                                    <a href="?side=admin&tab=brugere&action=activate&user_id=<?= $u['id'] ?>&csrf=<?= $csrf ?>" class="btn btn-enable">Aktiver</a>
                                 <?php endif; ?>
 
-                                <a href="?side=admin&tab=brugere&action=delete&user_id=<?= $u['id'] ?>" 
+                                <a href="?side=admin&tab=brugere&action=delete&user_id=<?= $u['id'] ?>&csrf=<?= $csrf ?>" 
                                    class="btn btn-reject" 
                                    onclick="return confirm('Slet bruger permanent? Der sendes besked om afslag.')">Slet</a>
                             </div>
