@@ -4,12 +4,27 @@
  */
 $base = __DIR__ . '/../../system/modules';
 require_once __DIR__ . '/../../system/modules/module_manager.php';
+require_once __DIR__ . '/../../inc/csrf.php';
 
 $protected_modules = ['core', 'system', 'users'];
+$csrf = csrf_token();
 
 if (isset($_GET['action']) && isset($_GET['module'])) {
     $action = $_GET['action'];
     $key = $_GET['module'];
+
+    // Sikkerhedstoken: uden et gyldigt token sker der ingenting.
+    if (!csrf_check($_GET['csrf'] ?? '')) {
+        header("Location: ?side=admin&page=modules&error=csrf");
+        exit;
+    }
+
+    // Modulnøglen bruges i filstier, så kun almindelige tegn er tilladt.
+    if (!is_string($key) || !preg_match('/^[A-Za-z0-9_-]+$/', $key)) {
+        header("Location: ?side=admin&page=modules&error=" . urlencode('Ugyldigt modulnavn.'));
+        exit;
+    }
+
     $jsonPath = "$base/$key/module.json";
     $sqlPath = "$base/$key/install.sql";
 
@@ -73,18 +88,24 @@ foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $m) { $dbModules[$m['module_key']]
 ?>
 
 <div style="background: #fff; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.02);">
-    <h2 style="margin-bottom: 25px;">🧩 Modul Styring</h2>
+    <h2 style="margin-bottom: 25px;"><i class="fas fa-puzzle-piece"></i> Modul Styring</h2>
 
     <?php if (isset($_GET['error'])): ?>
-        <?php $err = $_GET['error'] === 'protected'
-            ? 'Systemmoduler (Kerne-system, System og Brugerstyring) kan ikke deaktiveres eller slettes, fordi resten af systemet bruger dem.'
-            : $_GET['error']; ?>
+        <?php
+        if ($_GET['error'] === 'protected') {
+            $err = 'Systemmoduler (Kerne-system, System og Brugerstyring) kan ikke deaktiveres eller slettes, fordi resten af systemet bruger dem.';
+        } elseif ($_GET['error'] === 'csrf') {
+            $err = 'Handlingen blev afvist, fordi sikkerhedstokenet manglede eller var forkert. Prøv igen fra denne side.';
+        } else {
+            $err = $_GET['error'];
+        }
+        ?>
         <div style="background: #f8d7da; color: #721c24; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px;">
-            ⚠️ <?= htmlspecialchars($err) ?>
+            <i class="fas fa-exclamation-triangle"></i> <?= htmlspecialchars($err) ?>
         </div>
     <?php elseif (isset($_GET['success'])): ?>
         <div style="background: #d4edda; color: #155724; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px;">
-            ✅ Handling udført.
+            <i class="fas fa-check-circle"></i> Handling udført.
         </div>
     <?php endif; ?>
 
@@ -113,19 +134,19 @@ foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $m) { $dbModules[$m['module_key']]
                 <td style="padding: 20px;">
                     <div style="display: flex; gap: 10px; align-items: center; min-width: 240px;">
                         <?php if (!$isInstalled): ?>
-                            <a class="btn" style="min-width: 100px; text-align: center;" href="?side=admin&page=modules&action=install&module=<?= $key ?>">Installér</a>
+                            <a class="btn" style="min-width: 100px; text-align: center;" href="?side=admin&page=modules&action=install&module=<?= $key ?>&csrf=<?= $csrf ?>">Installér</a>
                         <?php elseif ($isProtected): ?>
                             <span class="btn" style="min-width: 100px; text-align: center; background: #cbd5e0; color: #718096; cursor: not-allowed; pointer-events: none;">Deaktivér</span>
                             <span style="color: #718096; font-size: 0.85em;">Systemmodul – kan ikke deaktiveres</span>
                         <?php else: ?>
-                            <a class="btn" style="min-width: 100px; text-align: center;" href="?side=admin&page=modules&action=<?= $isActive ? 'deactivate' : 'activate' ?>&module=<?= $key ?>">
+                            <a class="btn" style="min-width: 100px; text-align: center;" href="?side=admin&page=modules&action=<?= $isActive ? 'deactivate' : 'activate' ?>&module=<?= $key ?>&csrf=<?= $csrf ?>">
                                 <?= $isActive ? 'Deaktivér' : 'Aktivér' ?>
                             </a>
                             
                             <div style="width: 80px;">
                                 <?php if (!$isActive): ?>
                                     <a class="btn" style="background:#e53e3e; color:white; cursor:pointer; width: 100%; text-align: center; border-radius: 5px; padding: 5px 10px;" 
-                                       onclick="if(confirm('Vil du slette modulet?\n\nTryk OK for FULD SLETNING (inkl. databasetabeller).\nTryk Annuller for KUN at fjerne fra modul-listen.')) { window.location.href='?side=admin&page=modules&action=uninstall&module=<?= $key ?>&mode=full'; } else { window.location.href='?side=admin&page=modules&action=uninstall&module=<?= $key ?>&mode=soft'; }">
+                                       onclick="if(confirm('Vil du slette modulet?\n\nTryk OK for FULD SLETNING (inkl. databasetabeller).\nTryk Annuller for KUN at fjerne fra modul-listen.')) { window.location.href='?side=admin&page=modules&action=uninstall&module=<?= $key ?>&mode=full&csrf=<?= $csrf ?>'; } else { window.location.href='?side=admin&page=modules&action=uninstall&module=<?= $key ?>&mode=soft&csrf=<?= $csrf ?>'; }">
                                        Slet
                                     </a>
                                 <?php endif; ?>
