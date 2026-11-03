@@ -10,3 +10,4 @@ $settings = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 ?>
 <h2>Eksempel-modul</h2>
 <p>Hej <?= htmlspecialchars($user['username']) ?>! Her kommer modulets indhold.</p>
+<p>Tekst fra admin: <strong><?= htmlspecialchars($settings['eksempel_tekst'] ?? '(ikke sat endnu)') ?></strong></p>

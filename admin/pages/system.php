@@ -46,7 +46,7 @@ $currentName = $stmt->fetchColumn() ?: 'Domusius';
                 <small style="display: block; color: #888; margin-top: 5px;">Dette navn vises i titlen, på login-siden og i bunden af siden.</small>
             </div>
             <button type="submit" name="save_settings" class="btn btn-primary">
-                ߒem systemindstillinger
+                <i class="fas fa-save"></i> Gem systemindstillinger
             </button>
         </form>
     </div>
@@ -59,7 +59,7 @@ $currentName = $stmt->fetchColumn() ?: 'Domusius';
                 <h4 style="margin-top: 0;">Backup (Export)</h4>
                 <p style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">Download en komplet SQL-kopi af din database.</p>
                 <a href="admin/system/export_db.php" class="btn btn-primary" style="text-decoration: none; display: inline-block; width: 100%; text-align: center;">
-                    ߓ堄ownload SQL
+                    <i class="fas fa-download"></i> Download SQL
                 </a>
             </div>
 
@@ -68,7 +68,7 @@ $currentName = $stmt->fetchColumn() ?: 'Domusius';
                 <form action="admin/system/import_db.php" method="post" enctype="multipart/form-data">
                     <input type="file" name="db_file" style="margin-bottom: 15px; font-size: 0.8rem;">
                     <button type="submit" class="btn btn-reject" style="width: 100%;" onclick="return confirm('ADVARSEL: Dette overskriver din nuværende database! Er du helt sikker?')">
-                        ߓ䠕pload & Gendan
+                        <i class="fas fa-upload"></i> Upload & Gendan
                     </button>
                 </form>
             </div>

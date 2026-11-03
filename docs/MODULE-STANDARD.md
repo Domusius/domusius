@@ -39,7 +39,7 @@ system/modules/<key>/
 
 - **Side:** `?side=<key>` inkluderer `index.php`. `$pdo`, `$user` og `$site_name` er tilgængelige.
 - **Menu:** hovedmenuen bygges fra tabellerne `modules` og `module_settings` (`menu_title`). Modulet skal ikke selv lave menupunkter.
-- **Dashboard:** `widgets/dashboard_view.php` inkluderes i et kort. Ramme, overskrift, ikon og størrelse styres af kernen/databasen.
+- **Dashboard:** `widgets/dashboard_view.php` inkluderes i et kort. Ramme, overskrift og ikon laves af kernen. **Et modul vises kun på dashboardet, når administratoren selv slår det til** under *Vis på dashboard* i modulets admin-side (kolonnerne `show_on_dashboard`, `dashboard_size` (`small`, `medium` eller `full`) og `dashboard_order` i tabellen `modules`). Det sker ikke af sig selv ved installationen. Færdig kode til det ligger i `module-template/admin/settings.php`, og alle moduler skal bruge den samme.
 - **Admin:** `admin/settings.php` vises under Admin, kun for administratorer.
 - **Opgraderinger:** `upgrades/DB_<version>.php` køres automatisk i rækkefølge, når versionen i databasen er lavere. Filen får `$pdo`. Brug `CREATE TABLE IF NOT EXISTS` og ændringer, der tåler at blive kørt to gange.
 
@@ -80,6 +80,7 @@ Andre hook-navne (fx `main_menu`, `admin_menu`) kaldes ikke endnu og gør derfor
 - [ ] Mappen hedder det samme som `key`
 - [ ] `module.json` har alle påkrævede felter, og `version` matcher nyeste `DB_x.php`
 - [ ] `requires` er en liste
+- [ ] Admin-siden har "Vis på dashboard" (kopiér fra skabelonen), hvis modulet har et kort
 - [ ] Tabeller og indstillinger har præfiks
 - [ ] Ingen hemmeligheder i filerne
 - [ ] `uninstall.php` fjerner det, modulet har oprettet
