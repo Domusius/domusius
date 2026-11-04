@@ -5,6 +5,7 @@ session_start();
     DB
 ------------------------------------------------- */
 require __DIR__ . '/config/config.php';
+require_once __DIR__ . '/inc/favicon.php';
 
 /* -------------------------------------------------
     MAIL til admin 
@@ -38,7 +39,7 @@ try {
     Tjek adgang
 ------------------------------------------------- */
 if (!$registrationOpen) {
-    header('Location: login.php');
+    header('Location: index.php');
     exit;
 }
 
@@ -86,10 +87,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 sendAdminNotification($pdo, $username);
 
                 if ($requireApproval) {
-                    $success = '✅ Konto oprettet. Afventer admin-godkendelse.';
+                    $success = 'Konto oprettet. Afventer admin-godkendelse.';
 
                 } else {
-                    $success = '✅ Konto oprettet. Du kan nu logge ind.';
+                    $success = 'Konto oprettet. Du kan nu logge ind.';
                 }
             } else {
                 $error = 'Der opstod en databasefejl. Prøv igen senere.';
@@ -102,7 +103,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="da">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Opret konto – <?= htmlspecialchars($siteName) ?></title>
+    <?= favicon_html($pdo) ?>
     <link rel="stylesheet" href="assets/style.css">
 </head>
 <body class="login-page">
@@ -120,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php if ($success): ?>
         <div class="login-success">
             <?= htmlspecialchars($success) ?><br><br>
-            <a href="login.php" style="font-weight: bold; color: inherit;">Gå til login</a>
+            <a href="index.php" style="font-weight: bold; color: inherit;">Gå til login</a>
         </div>
     <?php else: ?>
 
@@ -144,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
 
         <div class="login-footer">
-            <a href="login.php">← Tilbage til login</a>
+            <a href="index.php">← Tilbage til login</a>
         </div>
     <?php endif; ?>
 </div>

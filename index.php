@@ -16,6 +16,7 @@ require_once __DIR__ . '/inc/hooks.php';
 require __DIR__ . '/config/config.php';
 require __DIR__ . '/config/init.php';
 require_once __DIR__ . '/inc/module_loader.php'; 
+require_once __DIR__ . '/inc/favicon.php';
 
 $error = '';
 
@@ -85,6 +86,7 @@ if ($side === 'admin' && $user['role'] !== 'admin') { $side = 'dashboard'; }
 <head>
     <meta charset="UTF-8">
     <title><?= htmlspecialchars($site_name) ?></title>
+    <?= favicon_html($pdo) ?>
     <link rel="stylesheet" href="assets/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <?php if ($side === 'admin'): ?>
