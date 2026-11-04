@@ -5,8 +5,14 @@ if (!isset($user) || $user['role'] !== 'admin') {
     exit('Adgang nægtet');
 }
 
+// Sikkerhedstoken (CSRF). Kernen kan allerede have indlæst det.
+if (!function_exists('csrf_token')) {
+    require_once __DIR__ . '/../../../../inc/csrf.php';
+}
+
 $current_module_key = 'eksempel';   // skal være det samme som "key" i module.json
 $message = '';
+$error = '';
 
 // 1. Læs tilgængelige widgets fra widgets/widgets.json
 $widgets_folder = __DIR__ . '/../widgets/';
@@ -16,8 +22,16 @@ if (file_exists($widgets_folder . 'widgets.json')) {
     $available_widgets = $data['widgets'] ?? [];
 }
 
+// Alle formularer skal sende sikkerhedstokenet med: csrf_field() i formularen.
+// Uden et gyldigt token gemmes der ingenting.
+$isPost  = $_SERVER['REQUEST_METHOD'] === 'POST';
+$tokenOk = !$isPost || csrf_check($_POST['csrf'] ?? '');
+if ($isPost && !$tokenOk) {
+    $error = 'Handlingen blev afvist, fordi sikkerhedstokenet manglede eller var forkert. Prøv igen fra denne side.';
+}
+
 // 2. Gem dashboard-layout (vis/skjul, størrelse, rækkefølge)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_layout'])) {
+if ($isPost && $tokenOk && isset($_POST['save_layout'])) {
     $newState = isset($_POST['show_on_dashboard']) ? 1 : 0;
 
     // Kun en widget-fil, der står i widgets.json, må vælges
@@ -40,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_layout'])) {
 }
 
 // 3. Gem modulets egen indstilling
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_text'])) {
+if ($isPost && $tokenOk && isset($_POST['save_text'])) {
     $value = trim($_POST['eksempel_tekst'] ?? '');
     $stmt = $pdo->prepare(
         "INSERT INTO site_settings (setting_key, setting_value) VALUES ('eksempel_tekst', :v)
@@ -66,6 +80,12 @@ $tekst = (string)$stmt->fetchColumn();
 ?>
 <h3>Eksempel Opsætning</h3>
 
+<?php if ($error): ?>
+    <div style="background: #f8d7da; color: #721c24; padding: 10px 15px; border-radius: 8px; margin-bottom: 20px;">
+        <i class="fas fa-exclamation-triangle"></i> <?= htmlspecialchars($error) ?>
+    </div>
+<?php endif; ?>
+
 <?php if ($message): ?>
     <div style="background: #d4edda; color: #155724; padding: 10px 15px; border-radius: 8px; margin-bottom: 20px;">
         <i class="fas fa-check-circle"></i> <?= htmlspecialchars($message) ?>
@@ -75,6 +95,7 @@ $tekst = (string)$stmt->fetchColumn();
 <!-- Dashboard: modulet vises først på dashboardet, når du slår det til her -->
 <div style="background: white; padding: 15px 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
     <form method="post" style="display: flex; align-items: center; justify-content: space-between; gap: 15px; flex-wrap: wrap;">
+        <?= csrf_field() ?>
         <div style="display: flex; align-items: center; gap: 12px;">
             <input type="checkbox" name="show_on_dashboard" value="1" <?= $showOnDash ? 'checked' : '' ?> style="width: 18px; height: 18px; cursor: pointer;">
             <span style="font-weight: 700; color: #334155;">Vis på dashboard</span>
@@ -111,6 +132,7 @@ $tekst = (string)$stmt->fetchColumn();
 
 <!-- Modulets egen indstilling -->
 <form method="post">
+    <?= csrf_field() ?>
     <label>Tekst</label>
     <input type="text" name="eksempel_tekst" value="<?= htmlspecialchars($tekst) ?>">
     <button type="submit" name="save_text">Gem</button>

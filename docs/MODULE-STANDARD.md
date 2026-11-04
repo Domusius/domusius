@@ -67,7 +67,38 @@ Andre hook-navne (fx `main_menu`, `admin_menu`) kaldes ikke endnu og gør derfor
 - Brug altid prepared statements (`$pdo->prepare()`), og `htmlspecialchars()` på alt, der skrives til siden.
 - Skriv aldrig personlige standardværdier (adresser, priser, datoer) ind i koden. Brug neutrale standarder.
 
-## 6. Regler
+## 6. Sikkerhed
+
+**Sikkerhedstoken (CSRF).** Alle formularer og links, der ændrer noget (gem, slet, aktivér osv.), skal sende kernens sikkerhedstoken med. Ellers kan en fremmed side få administratorens browser til at udløse handlingen. Funktionerne ligger i `inc/csrf.php`:
+
+| Funktion | Bruges til |
+|---|---|
+| `csrf_field()` | Skjult felt i en formular: `<?= csrf_field() ?>` |
+| `csrf_token()` | Tokenet som tekst, fx i et link: `&csrf=<?= csrf_token() ?>` |
+| `csrf_check($værdi)` | Sand, hvis tokenet er gyldigt: `csrf_check($_POST['csrf'] ?? '')` eller `csrf_check($_GET['csrf'] ?? '')` |
+
+- Kontrollér tokenet **før** noget gemmes, ændres eller slettes. Er det ugyldigt, gør du ingenting og viser en fejlbesked.
+- Mønstret står færdigt i `module-template/admin/settings.php`, inkl. de linjer, der indlæser `csrf.php`, hvis kernen ikke allerede har gjort det.
+- Sider, der kun læser og ikke ændrer noget, behøver ikke token.
+
+**Direkte adgang.** Filer, som kun kernen skal køre (`uninstall.php` og `upgrades/DB_<version>.php`), må ikke kunne åbnes direkte i browseren. Start dem med:
+
+```php
+if (!isset($pdo) || !($pdo instanceof PDO)) {
+    http_response_code(403);
+    exit('Adgang nægtet');
+}
+```
+
+Admin-sider (`admin/settings.php`) starter med at kontrollere, at brugeren er administrator:
+
+```php
+if (!isset($user) || $user['role'] !== 'admin') {
+    exit('Adgang nægtet');
+}
+```
+
+## 7. Regler
 
 1. Et modul må ikke inkludere filer fra et andet modul. Brug `requires` og data i databasen.
 2. Et modul skal kunne installeres og afinstalleres uden at efterlade tabeller eller indstillinger.
@@ -75,7 +106,7 @@ Andre hook-navne (fx `main_menu`, `admin_menu`) kaldes ikke endnu og gør derfor
 4. Ingen backupfiler (`index_2026-03-13.php`), debug-filer eller testdata i modulet. Brug Git.
 5. Moduler kører med fulde PHP-rettigheder på serveren. Installér kun moduler, du stoler på.
 
-## 7. Tjekliste for nyt modul
+## 8. Tjekliste for nyt modul
 
 - [ ] Mappen hedder det samme som `key`
 - [ ] `module.json` har alle påkrævede felter, og `version` matcher nyeste `DB_x.php`
@@ -83,5 +114,7 @@ Andre hook-navne (fx `main_menu`, `admin_menu`) kaldes ikke endnu og gør derfor
 - [ ] Admin-siden har "Vis på dashboard" (kopiér fra skabelonen), hvis modulet har et kort
 - [ ] Tabeller og indstillinger har præfiks
 - [ ] Ingen hemmeligheder i filerne
+- [ ] Alle formularer og handlingslinks sender sikkerhedstokenet med, og det kontrolleres, før noget ændres
+- [ ] `uninstall.php` og `upgrades/` afviser direkte adgang
 - [ ] `uninstall.php` fjerner det, modulet har oprettet
 - [ ] Testet: installér, brug, opgradér, afinstallér

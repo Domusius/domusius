@@ -1,6 +1,11 @@
 <?php
 // admin/pages/log.php
 
+if (!isset($user) || $user['role'] !== 'admin') {
+    http_response_code(403);
+    exit('Adgang nægtet');
+}
+
 require_once __DIR__ . '/log_admin_action.php';
 
 // Fjern evt. dobbeltlogning her, hvis du har tilføjet det til admin_panel.php
@@ -131,7 +136,7 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
     .btn-export:hover { background-color: #218838; }
 </style>
 
-<h1>📊 Admin log</h1>
+<h1><i class="fas fa-chart-bar"></i> Admin log</h1>
 
 <div class="content-card">
     <form method="get" class="log-filter-form">
