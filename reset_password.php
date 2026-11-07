@@ -24,9 +24,9 @@ if (is_string($token) && $token !== '') {
     $user = $stmt->fetch();
 }
 
-if (!$user) {
-    http_response_code(400);
-} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Et ugyldigt link vises som en almindelig side (ingen fejlstatus), ellers erstatter
+// webserveren siden med sin egen fejlside.
+if ($user && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $pass = $_POST['password'] ?? '';
     if (strlen($pass) < 6) {
         $error = "Koden skal være mindst 6 tegn.";

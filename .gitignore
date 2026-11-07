@@ -1,6 +1,7 @@
 # Hemmeligheder og lokale filer - maa aldrig i Git
 config/config.php
 install/install.lock
+assets/favicons/custom*
 *.lock
 .env
 
@@ -23,3 +24,6 @@ Thumbs.db
 # Database-dumps (undtagen installationsskemaet)
 *.sql
 !install/DB/setup_db.sql
+
+
+#
