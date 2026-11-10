@@ -4,7 +4,7 @@ header('Access-Control-Allow-Origin: *'); // Tillader at appen kan kalde fra and
 
 echo json_encode([
     'status' => 'success',
-    'message' => 'Forbindelse til Domusius Synology-server er oprettet!',
+    'message' => 'Forbindelse til Domusius Server er oprettet!',
     'timestamp' => date('Y-m-d H:i:s')
 ]);
 ?>

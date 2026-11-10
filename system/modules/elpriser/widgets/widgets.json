@@ -1,0 +1,14 @@
+{
+    "widgets": [
+        {
+            "name": "El-pris i dag",
+            "file": "dashboard_view.php",
+            "size": "medium"
+        },
+        {
+            "name": "El-pris, gennemsnit for 7 dage",
+            "file": "avg_price_week.php",
+            "size": "medium"
+        }
+    ]
+}

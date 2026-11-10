@@ -1,0 +1,10 @@
+{
+    "key": "elpriser",
+    "name": "El-priser",
+    "description": "Henter daglige elpriser (gennemsnit, højeste og laveste) fra Energi Data Service eller et Google-ark og regner dem om til en samlet pris med afgifter og moms.",
+    "version": "0.00",
+    "db": true,
+    "menu_title": "El-priser",
+    "admin_menu_title": "El-pris Opsætning",
+    "requires": []
+}
